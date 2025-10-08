@@ -48,6 +48,10 @@ def insert_image(ws, img_file, cell, max_width, max_height, scale=0.7):
 # ---------------- Streamlit 页面 ----------------
 st.title("报价单生成器")
 
+# 上传模板
+st.header("上传 Excel 模板")
+uploaded_template = st.file_uploader("请选择 Excel 模板文件", type=["xlsx"])
+
 # 基本信息
 st.header("基本信息")
 purchaser = st.text_area("采购商信息")
@@ -56,10 +60,6 @@ date_input = st.text_input("日期 (YYYY/MM/DD)")
 F_input = st.text_input("总费用 F（支持加减运算）")
 R_input = st.text_input("汇率 R")
 start_row = st.number_input("模板开始填数据行", min_value=1, value=13)
-
-# 上传模板
-st.header("上传 Excel 模板")
-uploaded_template = st.file_uploader("请选择 Excel 模板文件", type=["xlsx"])
 
 # 产品信息
 st.header("产品信息")
