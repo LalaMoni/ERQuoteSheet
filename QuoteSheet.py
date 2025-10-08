@@ -57,7 +57,7 @@ st.header("基本信息")
 purchaser = st.text_area("采购商信息")
 order_no = st.text_input("编号")
 date_input = st.text_input("日期 (YYYY/MM/DD)")
-F_input = st.text_input("总费用")
+F_input = st.text_input("总费用（报关保险运费等其他费用）")
 R_input = st.text_input("汇率（银行买入价）")
 start_row = st.number_input("模板开始填数据行", min_value=1, value=13)
 
