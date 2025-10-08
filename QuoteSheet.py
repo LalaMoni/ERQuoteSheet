@@ -46,7 +46,7 @@ def insert_image(ws, img_file, cell, max_width, max_height, scale=0.7):
     ws.add_image(img, cell)
 
 # ---------------- Streamlit 页面 ----------------
-st.title("在线报价单生成器")
+st.title("报价单生成器")
 
 # 基本信息
 st.header("基本信息")
