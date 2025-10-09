@@ -29,17 +29,25 @@ def calculate_prices(P, product_Q, total_Q, F, R):
     B_USD = B_CNY / R
     return round(B_CNY, 4), round(A_CNY, 4), round(B_USD, 4), round(A_USD, 4)
 
-def copy_row_style(ws, src_row, tgt_row):
+def copy_row_style(ws, source_row, target_row):
     for col in range(1, ws.max_column + 1):
-        src_cell = ws.cell(row=src_row, column=col)
-        tgt_cell = ws.cell(row=tgt_row, column=col)
-        if src_cell.has_style:
-            tgt_cell.font = copy(src_cell.font)
-            tgt_cell.border = copy(src_cell.border)
-            tgt_cell.fill = copy(src_cell.fill)
-            tgt_cell.number_format = copy(src_cell.number_format)
-            tgt_cell.protection = copy(src_cell.protection)
-            tgt_cell.alignment = copy(src_cell.alignment)
+        source_cell = ws.cell(row=source_row, column=col)
+        target_cell = ws.cell(row=target_row, column=col)
+        target_cell.font = source_cell.font
+        target_cell.border = source_cell.border
+        target_cell.fill = source_cell.fill
+        target_cell.number_format = source_cell.number_format
+        target_cell.alignment = source_cell.alignment
+
+    # 复制合并单元格
+    for merged in ws.merged_cells.ranges:
+        if merged.min_row == source_row:
+            ws.merge_cells(
+                start_row=target_row,
+                start_column=merged.min_col,
+                end_row=target_row,
+                end_column=merged.max_col
+            )
 
 def excel_cell_size_to_pixels(ws, row, col):
     col_letter = ws.cell(row=row, column=col).column_letter
