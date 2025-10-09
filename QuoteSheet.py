@@ -125,7 +125,7 @@ if st.button("生成报价单"):
         st.stop()
 
     total_Q = sum(p["Q"] for p in products)
-    wb = load_workbook(template_bytes)
+    wb = load_workbook(BytesIO(uploaded_template.read()))
     ws = wb.active
     
     # 写入基本信息
