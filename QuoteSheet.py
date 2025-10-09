@@ -6,7 +6,6 @@ from PIL import Image
 from io import BytesIO
 import datetime
 import pandas as pd
-from openpyxl.utils import get_column_letter
 
 
 # ---------------- 函数 ----------------
@@ -29,7 +28,7 @@ def calculate_prices(P, product_Q, total_Q, F, R):
     return round(B_CNY, 4), round(A_CNY, 4), round(B_USD, 4), round(A_USD, 4)
 
 def excel_cell_size_to_pixels(ws, row, col):
-    col_letter = get_column_letter(col)
+    col_letter = ws.cell(row=row, column=col).column_letter
     col_width = ws.column_dimensions[col_letter].width or 8.43
     row_height = ws.row_dimensions[row].height or 15
     px_width = int(col_width * 7)
@@ -126,7 +125,7 @@ if st.button("生成报价单"):
         st.stop()
 
     total_Q = sum(p["Q"] for p in products)
-    wb = load_workbook(uploaded_template)
+    wb = load_workbook(template_bytes)
     ws = wb.active
     
     # 写入基本信息
