@@ -101,8 +101,19 @@ for i in range(st.session_state.product_rows):
     st.text(f"序号: {no}")
     name = st.selectbox(f"产品名称", list(product_options.keys()), key=f"name{i}")
     model = st.selectbox(f"型号", product_options[name], key=f"model{i}")
-    P = st.number_input(f"净单价", format="%.4f", key=f"P{i}")
-    Q = st.number_input(f"数量", min_value=0, key=f"Q{i}")
+    
+    P_text = st.text_input("净单价", value="", key="P_text")
+    Q_text = st.text_input("数量", value="", key="Q_text")
+    try:
+        P = float(P_text) if P_text != "" else 0.0
+    except:
+        P = 0.0
+
+    try:
+        Q = int(Q_text) if Q_text != "" else 0
+    except:
+        Q = 0
+        
     uploaded_file = st.file_uploader(f"上传图片", type=["png","jpg","jpeg"], key=f"img{i}")
     products.append({"no": no, "name": name, "model": model, "P": P, "Q": Q, "img": uploaded_file})
 
