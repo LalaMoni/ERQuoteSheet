@@ -145,6 +145,8 @@ if st.button("生成报价单"):
     # 写入产品数据
     for idx, p in enumerate(products):
         row = start_row + idx
+        if idx > 0:
+            ws.insert_rows(row)
         ws.row_dimensions[row].height = 69
         max_w, max_h = excel_cell_size_to_pixels(ws, row, IMG_COL)
 
