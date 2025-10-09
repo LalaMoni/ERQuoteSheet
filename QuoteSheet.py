@@ -5,7 +5,6 @@ from openpyxl.drawing.image import Image as XLImage
 from PIL import Image
 from io import BytesIO
 import datetime
-import requests
 import pandas as pd
 
 # ---------------- 函数 ----------------
@@ -47,16 +46,8 @@ def insert_image(ws, img_file, cell, max_width, max_height, scale=0.7):
 # ---------------- Streamlit 页面 ----------------
 st.title("报价单生成器")
 
-# 远程模板 URL
-template_url = st.text_input("模板 URL", value="https://github.com/LalaMoni/ERQuoteSheet/blob/main/Quote%20Sheet.xlsx")
-try:
-    response = requests.get(template_url)
-    response.raise_for_status()
-    template_bytes = BytesIO(response.content)
-    st.success("模板加载成功！")
-except Exception as e:
-    st.error(f"模板加载失败: {e}")
-    st.stop()
+st.header("上传 Excel 模板")
+uploaded_template = st.file_uploader("请选择 Excel 模板文件", type=["xlsx"])
 
 # 基本信息
 st.header("基本信息")
@@ -133,7 +124,7 @@ if st.button("生成报价单"):
         st.stop()
 
     total_Q = sum(p["Q"] for p in products)
-    wb = load_workbook(template_bytes)
+    wb = load_workbook(uploaded_template)
     ws = wb.active
     
     # 写入基本信息
