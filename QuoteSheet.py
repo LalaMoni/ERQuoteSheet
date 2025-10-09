@@ -102,8 +102,8 @@ for i in range(st.session_state.product_rows):
     name = st.selectbox(f"产品名称", list(product_options.keys()), key=f"name{i}")
     model = st.selectbox(f"型号", product_options[name], key=f"model{i}")
     
-    P_text = st.text_input("净单价", value="", key="P_text")
-    Q_text = st.text_input("数量", value="", key="Q_text")
+    P_text = st.text_input("净单价", value="", key="P_text{i}")
+    Q_text = st.text_input("数量", value="", key="Q_text{i}")
     try:
         P = float(P_text) if P_text.strip() != "" else 0.0
     except:
