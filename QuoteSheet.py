@@ -105,12 +105,12 @@ for i in range(st.session_state.product_rows):
     P_text = st.text_input("净单价", value="", key="P_text")
     Q_text = st.text_input("数量", value="", key="Q_text")
     try:
-        P = float(P_text) if P_text != "" else 0.0
+        P = float(P_text) if P_text.strip() != "" else 0.0
     except:
         P = 0.0
 
     try:
-        Q = int(Q_text) if Q_text != "" else 0
+        Q = int(Q_text) if Q_text.strip() != "" else 0
     except:
         Q = 0
         
