@@ -75,7 +75,7 @@ uploaded_template = st.file_uploader("请选择 Excel 模板文件", type=["xlsx
 st.header("基本信息")
 purchaser = st.text_area("采购商信息")
 today = datetime.date.today()
-order_no = st.text_input("编号", value=f"ERKJ{today.strftime('%Y%m%d')}01")
+order_no = st.text_input("编号", value=f"ERKJ{today.strftime('%Y%m%d')}XX")
 date_input = st.text_input("日期", value=today.strftime("%Y/%m/%d"))
 F_input = st.text_input("总费用（支持公式，例如 200+50*4）")
 R_input = st.text_input("汇率（买入价）")
