@@ -4,10 +4,12 @@ from openpyxl.cell.cell import MergedCell
 from openpyxl.drawing.image import Image as XLImage
 from PIL import Image
 from io import BytesIO
+import datetime
+import requests
+import pandas as pd
 
 # ---------------- 函数 ----------------
 def write_cell_safe(ws, row, col, value):
-    """安全写入单元格，处理合并单元格"""
     cell = ws.cell(row=row, column=col)
     if not isinstance(cell, MergedCell):
         cell.value = value
@@ -19,7 +21,6 @@ def write_cell_safe(ws, row, col, value):
                 break
 
 def calculate_prices(P, product_Q, total_Q, F, R):
-    """计算含税/不含税人民币与美元单价，返回 float 保留四位小数"""
     A_CNY = P + F / total_Q
     B_CNY = P / 1.13 * 1.02 + F / total_Q
     A_USD = A_CNY / R
@@ -27,7 +28,6 @@ def calculate_prices(P, product_Q, total_Q, F, R):
     return round(B_CNY, 4), round(A_CNY, 4), round(B_USD, 4), round(A_USD, 4)
 
 def excel_cell_size_to_pixels(ws, row, col):
-    """根据 Excel 列宽和行高计算像素大小"""
     col_letter = ws.cell(row=row, column=col).column_letter
     col_width = ws.column_dimensions[col_letter].width or 8.43
     row_height = ws.row_dimensions[row].height or 15
@@ -36,7 +36,6 @@ def excel_cell_size_to_pixels(ws, row, col):
     return px_width, px_height
 
 def insert_image(ws, img_file, cell, max_width, max_height, scale=0.7):
-    """在 Excel 中插入图片，自动缩放到单元格大小"""
     img_pil = Image.open(BytesIO(img_file.getbuffer()))
     img_pil.thumbnail((max_width * scale, max_height * scale))
     img_bytes = BytesIO()
@@ -48,63 +47,101 @@ def insert_image(ws, img_file, cell, max_width, max_height, scale=0.7):
 # ---------------- Streamlit 页面 ----------------
 st.title("报价单生成器")
 
-# 上传模板
-st.header("上传 Excel 模板")
-uploaded_template = st.file_uploader("请选择 Excel 模板文件", type=["xlsx"])
+# 远程模板 URL
+template_url = st.text_input("模板 URL", value="https://your-server.com/template.xlsx")
+try:
+    response = requests.get(template_url)
+    response.raise_for_status()
+    template_bytes = BytesIO(response.content)
+    st.success("模板加载成功！")
+except Exception as e:
+    st.error(f"模板加载失败: {e}")
+    st.stop()
 
 # 基本信息
 st.header("基本信息")
 purchaser = st.text_area("采购商信息")
-order_no = st.text_input("编号")
-date_input = st.text_input("日期 (YYYY/MM/DD)")
-F_input = st.text_input("总费用（报关保险运费等其他费用）")
-R_input = st.text_input("汇率（银行买入价）")
-start_row = st.number_input("模板开始填数据行", min_value=1, value=13)
+order_no = st.text_input("编号（ERKJXXXXXXXXXX）")
+date_input = st.text_input("日期（YYYY/MM/DD）", value=datetime.date.today().strftime("%Y/%m/%d"))
+F_input = st.text_input("总费用（支持公式，例如 200+50*4）")
+R_input = st.text_input("汇率（买入价）")
+start_row = 13  # 默认13行
 
-# 产品信息
+# --- 产品信息 ---
 st.header("产品信息")
-product_count = st.number_input("产品数量", min_value=1, value=1)
+product_options = {
+    "吸气片": ["SG-01", "SG-02", "SG-03"],
+    "焊料": ["CB-01", "CB-02"],
+}
+
+# 动态添加产品行
+if "product_rows" not in st.session_state:
+    st.session_state.product_rows = 1
+if st.button("添加产品"):
+    st.session_state.product_rows += 1
+
 products = []
-for i in range(product_count):
-    st.subheader(f"产品{i+1}")
-    no = st.number_input(f"序号", value=i+1, key=f"no{i}")
-    name = st.text_input(f"产品类别", key=f"name{i}")
-    model = st.text_input(f"型号", key=f"model{i}")
+for i in range(st.session_state.product_rows):
+    st.subheader(f"产品 {i+1}")
+    no = i + 1
+    st.text(f"序号: {no}")
+    name = st.selectbox(f"产品名称", list(product_options.keys()), key=f"name{i}")
+    model = st.selectbox(f"型号", product_options[name], key=f"model{i}")
     P = st.number_input(f"净单价", format="%.4f", key=f"P{i}")
-    Q = st.number_input(f"数量", value=0, key=f"Q{i}")
+    Q = st.number_input(f"数量", min_value=0, key=f"Q{i}")
     uploaded_file = st.file_uploader(f"上传图片", type=["png","jpg","jpeg"], key=f"img{i}")
     products.append({"no": no, "name": name, "model": model, "P": P, "Q": Q, "img": uploaded_file})
 
-# 生成报价单
-if st.button("生成报价单"):
-    if uploaded_template is None:
-        st.error("请先上传 Excel 模板")
-        st.stop()
 
-    # 解析 F 和 R
+# ---------------- 预览 ----------------
+if st.button("预览报价单"):
     try:
         F = eval(F_input)
     except Exception as e:
-        st.error(f"F 输入错误: {e}")
+        st.error(f"总费用输入错误: {e}")
         st.stop()
     try:
         R = float(R_input)
     except:
-        st.error("汇率 R 输入错误")
+        st.error("汇率输入错误")
         st.stop()
 
     total_Q = sum(p["Q"] for p in products)
+    preview_data = []
+    for p in products:
+        B_CNY, A_CNY, B_USD, A_USD = calculate_prices(p["P"], p["Q"], total_Q, F, R)
+        preview_data.append({
+            "序号": p["no"],
+            "产品": p["name"],
+            "型号": p["model"],
+            "数量": p["Q"],
+            "人民币单价(不含税)": B_CNY,
+            "人民币单价(含税)": A_CNY,
+            "美元单价(不含税)": B_USD,
+            "美元单价(含税)": A_USD,
+        })
+    df_preview = pd.DataFrame(preview_data)
+    st.table(df_preview)
 
-    # 读取模板
-    wb = load_workbook(uploaded_template)
+# 生成报价单
+if st.button("生成报价单"):
+    try:
+        F = eval(F_input)
+        R = float(R_input)
+    except Exception as e:
+        st.error(f"F 或 R 输入错误: {e}")
+        st.stop()
+
+    total_Q = sum(p["Q"] for p in products)
+    wb = load_workbook(template_bytes)
     ws = wb.active
-
-    # 写入采购商、编号、日期
+    
+    # 写入基本信息
     write_cell_safe(ws, 4, 7, purchaser)
     ws.cell(row=8, column=7, value=order_no)
     ws.cell(row=9, column=7, value=date_input)
 
-    # 假设列位置
+    # 列位置
     NO_COL = 1
     PRODUCT_COL = 2
     IMG_COL = 3
