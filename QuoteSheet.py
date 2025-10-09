@@ -2,6 +2,8 @@ import streamlit as st
 from openpyxl import load_workbook
 from openpyxl.cell.cell import MergedCell
 from openpyxl.drawing.image import Image as XLImage
+from openpyxl.utils import get_column_letter
+from copy import copy
 from PIL import Image
 from io import BytesIO
 import datetime
@@ -26,6 +28,18 @@ def calculate_prices(P, product_Q, total_Q, F, R):
     A_USD = A_CNY / R
     B_USD = B_CNY / R
     return round(B_CNY, 4), round(A_CNY, 4), round(B_USD, 4), round(A_USD, 4)
+
+def copy_row_style(ws, src_row, tgt_row):
+    for col in range(1, ws.max_column + 1):
+        src_cell = ws.cell(row=src_row, column=col)
+        tgt_cell = ws.cell(row=tgt_row, column=col)
+        if src_cell.has_style:
+            tgt_cell.font = copy(src_cell.font)
+            tgt_cell.border = copy(src_cell.border)
+            tgt_cell.fill = copy(src_cell.fill)
+            tgt_cell.number_format = copy(src_cell.number_format)
+            tgt_cell.protection = copy(src_cell.protection)
+            tgt_cell.alignment = copy(src_cell.alignment)
 
 def excel_cell_size_to_pixels(ws, row, col):
     col_letter = ws.cell(row=row, column=col).column_letter
@@ -147,6 +161,7 @@ if st.button("生成报价单"):
         row = start_row + idx
         if idx > 0:
             ws.insert_rows(row)
+            copy_row_style(ws, start_row, row)
         ws.row_dimensions[row].height = 69
         max_w, max_h = excel_cell_size_to_pixels(ws, row, IMG_COL)
 
