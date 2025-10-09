@@ -6,6 +6,8 @@ from PIL import Image
 from io import BytesIO
 import datetime
 import pandas as pd
+from openpyxl.utils import get_column_letter
+
 
 # ---------------- 函数 ----------------
 def write_cell_safe(ws, row, col, value):
