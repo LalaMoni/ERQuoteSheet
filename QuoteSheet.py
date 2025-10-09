@@ -158,10 +158,13 @@ if st.button("生成报价单"):
 
     # 写入产品数据
     for idx, p in enumerate(products):
+        if idx == 0:
+        row = start_row  # 第一个产品直接用模板行
+    else:
         row = start_row + idx
-        if idx > 0:
-            ws.insert_rows(row)
-            copy_row_style(ws, start_row, row)
+        ws.insert_rows(row)  # 在第13行下插入新行
+        copy_row_style(ws, start_row, row)  # 复制第13行样式到新行
+        
         ws.row_dimensions[row].height = 69
         max_w, max_h = excel_cell_size_to_pixels(ws, row, IMG_COL)
 
