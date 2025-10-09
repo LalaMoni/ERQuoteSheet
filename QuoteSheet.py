@@ -27,7 +27,7 @@ def calculate_prices(P, product_Q, total_Q, F, R):
     return round(B_CNY, 4), round(A_CNY, 4), round(B_USD, 4), round(A_USD, 4)
 
 def excel_cell_size_to_pixels(ws, row, col):
-    col_letter = ws.cell(row=row, column=col).column_letter
+    col_letter = get_column_letter(col)
     col_width = ws.column_dimensions[col_letter].width or 8.43
     row_height = ws.row_dimensions[row].height or 15
     px_width = int(col_width * 7)
