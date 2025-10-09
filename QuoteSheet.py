@@ -48,7 +48,7 @@ def insert_image(ws, img_file, cell, max_width, max_height, scale=0.7):
 st.title("报价单生成器")
 
 # 远程模板 URL
-template_url = st.text_input("模板 URL", value="https://your-server.com/template.xlsx")
+template_url = st.text_input("模板 URL", value="https://github.com/LalaMoni/ERQuoteSheet/blob/main/Quote%20Sheet.xlsx")
 try:
     response = requests.get(template_url)
     response.raise_for_status()
