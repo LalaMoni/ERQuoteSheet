@@ -33,13 +33,12 @@ def copy_row_style(ws, source_row, target_row):
     for col in range(1, ws.max_column + 1):
         source_cell = ws.cell(row=source_row, column=col)
         target_cell = ws.cell(row=target_row, column=col)
-        target_cell.font = source_cell.font
-        target_cell.border = source_cell.border
-        target_cell.fill = source_cell.fill
-        target_cell.number_format = source_cell.number_format
-        target_cell.alignment = source_cell.alignment
+        target_cell.font = copy(source_cell.font)
+        target_cell.border = copy(source_cell.border)
+        target_cell.fill = copy(source_cell.fill)
+        target_cell.number_format = copy(source_cell.number_format)
+        target_cell.alignment = copy(source_cell.alignment)
 
-    # 复制合并单元格
     for merged in ws.merged_cells.ranges:
         if merged.min_row == source_row:
             ws.merge_cells(
