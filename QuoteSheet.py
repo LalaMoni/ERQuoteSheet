@@ -88,7 +88,7 @@ products = st.session_state.products
 
 for i, p in enumerate(st.session_state.products):
     st.markdown("---")
-    col_title, col_up, col_down, col_del = st.columns([6, 1, 1, 1])
+    col_title, col_up, col_down, col_del = st.columns([7, 1, 1, 1])
     with col_title:
         st.subheader(f"产品 {i+1}")  
     with col_up:
@@ -140,7 +140,7 @@ for i, p in enumerate(st.session_state.products):
 
 
 # ---------------- 预览&生成 ----------------
-col_space, col_buttons = st.columns([7, 2])
+col_space, col_buttons = st.columns([8, 2])
 
 with col_buttons:
     col_preview, col_generate = st.columns([1, 1])
