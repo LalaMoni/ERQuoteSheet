@@ -147,7 +147,7 @@ with col_buttons:
 
     # 预览报价单
     with col_preview:
-        if st.button("预览报价单"):
+        if st.button("预览"):
             try:
                 F = eval(F_input)
             except Exception as e:
@@ -177,7 +177,7 @@ with col_buttons:
 
     # 生成报价单
     with col_generate:
-        if st.button("生成报价单"):
+        if st.button("生成"):
             if not uploaded_template:
                 st.error("请先上传 Excel 模板")
                 st.stop()
