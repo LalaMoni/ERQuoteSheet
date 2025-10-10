@@ -140,7 +140,7 @@ for i, p in enumerate(st.session_state.products):
 
 
 # ---------------- 预览&生成 ----------------
-col_space, col_buttons = st.columns([6, 3])
+col_space, col_buttons = st.columns([7, 2])
 
 with col_buttons:
     col_preview, col_generate = st.columns([1, 1])
