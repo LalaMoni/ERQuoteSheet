@@ -72,14 +72,22 @@ product_options = {
 
 # 初始化
 if "products" not in st.session_state:
-    st.session_state.products = [{
-        "uid": str(uuid.uuid4()),
-        "name": list(product_options.keys())[0],
-        "model": product_options[list(product_options.keys())[0]][0],
-        "P": None,
-        "Q": None,
-        "img": None
-    }]
+    st.session_state.products = []
+
+for p in st.session_state.products:
+    if "uid" not in p:
+        p["uid"] = str(uuid.uuid4())
+
+# 添加新产品
+new_product = {
+    "uid": str(uuid.uuid4()),
+    "name": list(product_options.keys())[0],
+    "model": product_options[list(product_options.keys())[0]][0],
+    "P": None,
+    "Q": None,
+    "img": None
+}
+st.session_state.products.append(new_product)
 
 if "product_images" not in st.session_state:
     st.session_state.product_images = [None] * len(st.session_state.products)
