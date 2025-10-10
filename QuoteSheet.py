@@ -109,7 +109,7 @@ for i, p in enumerate(st.session_state.products):
             del st.session_state.product_images[i]
             st.rerun()
                 
-    # 产品信息
+    # 输入产品信息
     name = st.selectbox("产品名称", list(product_options.keys()),
                         index=list(product_options.keys()).index(p["name"]),
                         key=f"name_{p['uid']}")
@@ -139,96 +139,100 @@ for i, p in enumerate(st.session_state.products):
         st.rerun()
 
 
-# ---------------- 预览 ----------------
-col_preview, col_generate = st.columns(2)
+# ---------------- 预览&生成 ----------------
+col_space, col_buttons = st.columns([6, 3])
 
-with col_preview:
-    if st.button("预览报价单"):
-        try:
-            F = eval(F_input)
-        except Exception as e:
-            st.error(f"总费用输入错误: {e}")
-            st.stop()
-        try:
-            R = float(R_input)
-        except:
-            st.error("汇率输入错误")
-            st.stop()
+with col_buttons:
+    col_preview, col_generate = st.columns([1, 1])
 
-        total_Q = sum(p["Q"] for p in products if p["Q"])
-        preview_data = []
-        for p in products:
-            B_CNY, A_CNY, B_USD, A_USD = calculate_prices(p["P"], p["Q"], total_Q, F, R)
-            preview_data.append({
-                "产品": p["name"],
-                "型号": p["model"],
-                "数量": p["Q"],
-                "人民币单价(不含税)": B_CNY,
-                "人民币单价(含税)": A_CNY,
-                "美元单价(不含税)": B_USD,
-                "美元单价(含税)": A_USD
-            })
-        df_preview = pd.DataFrame(preview_data)
-        st.table(df_preview)
+    # 预览报价单
+    with col_preview:
+        if st.button("预览报价单"):
+            try:
+                F = eval(F_input)
+            except Exception as e:
+                st.error(f"总费用输入错误: {e}")
+                st.stop()
+            try:
+                R = float(R_input)
+            except:
+                st.error("汇率输入错误")
+                st.stop()
 
-# 生成报价单
-with col_generate:
-    if st.button("生成报价单"):
-        if not uploaded_template:
-            st.error("请先上传 Excel 模板")
-            st.stop()
-        
-        try:
-            F = eval(F_input)
-            R = float(R_input)
-        except Exception as e:
-            st.error(f"F 或 R 输入错误: {e}")
-            st.stop()
+            total_Q = sum(p["Q"] for p in products if p["Q"])
+            preview_data = []
+            for p in products:
+                B_CNY, A_CNY, B_USD, A_USD = calculate_prices(p["P"], p["Q"], total_Q, F, R)
+                preview_data.append({
+                    "产品": p["name"],
+                    "型号": p["model"],
+                    "数量": p["Q"],
+                    "人民币单价(不含税)": B_CNY,
+                    "人民币单价(含税)": A_CNY,
+                    "美元单价(不含税)": B_USD,
+                    "美元单价(含税)": A_USD
+                })
+            df_preview = pd.DataFrame(preview_data)
+            st.table(df_preview)
 
-        total_Q = sum(p["Q"] for p in products)
-        wb = load_workbook(BytesIO(uploaded_template.read()))
-        ws = wb.active
-    
-        # 写入基本信息
-        write_cell_safe(ws, 4, 7, purchaser)
-        ws.cell(row=8, column=7, value=order_no)
-        ws.cell(row=9, column=7, value=date_input)
-
-        # 列位置
-        NO_COL, PRODUCT_COL, IMG_COL, MODEL_COL, QUANTITY_COL = 1, 2, 3, 4, 5
-        RMB_COL_START, USD_COL_START = 7, 9
-
-        # 写入产品数据
-        for p in products:
-            row = start_row + idx
-            ws.row_dimensions[row].height = 69
-            max_w, max_h = excel_cell_size_to_pixels(ws, row, IMG_COL)
-
-            ws.cell(row=row, column=NO_COL, value=idx + 1)
-            ws.cell(row=row, column=PRODUCT_COL, value=p["name"])
-            ws.cell(row=row, column=MODEL_COL, value=p["model"])
-            ws.cell(row=row, column=QUANTITY_COL, value=p["Q"])
-
-            B_CNY, A_CNY, B_USD, A_USD = calculate_prices(p["P"], p["Q"], total_Q, F, R)
-            if B_CNY:
-                write_cell_safe(ws, row, RMB_COL_START, B_CNY)
-                write_cell_safe(ws, row, RMB_COL_START + 1, A_CNY)
-                write_cell_safe(ws, row, USD_COL_START, B_USD)
-                write_cell_safe(ws, row, USD_COL_START + 1, A_USD)
-
-            # 插入图片
-            if p["img"]:
-                insert_image(ws, p["img"], f"C{row}", max_width=max_w, max_height=max_h)
+    # 生成报价单
+    with col_generate:
+        if st.button("生成报价单"):
+            if not uploaded_template:
+                st.error("请先上传 Excel 模板")
+                st.stop()
             
-        # 保存新文件到 BytesIO 提供下载
-        output = BytesIO()
-        wb.save(output)
-        output.seek(0)
-        new_file_name = f"报价单_{date_input.replace('/', '-')}.xlsx"
+            try:
+                F = eval(F_input)
+                R = float(R_input)
+            except Exception as e:
+                st.error(f"F 或 R 输入错误: {e}")
+                st.stop()
+    
+            total_Q = sum(p["Q"] for p in products)
+            wb = load_workbook(BytesIO(uploaded_template.read()))
+            ws = wb.active
+        
+            # 写入基本信息
+            write_cell_safe(ws, 4, 7, purchaser)
+            ws.cell(row=8, column=7, value=order_no)
+            ws.cell(row=9, column=7, value=date_input)
 
-        st.download_button(
-            "下载报价单",
-            data=output,
-            file_name=new_file_name,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+            # 列位置
+            NO_COL, PRODUCT_COL, IMG_COL, MODEL_COL, QUANTITY_COL = 1, 2, 3, 4, 5
+            RMB_COL_START, USD_COL_START = 7, 9
+    
+            # 写入产品数据
+            for p in products:
+                row = start_row + idx
+                ws.row_dimensions[row].height = 69
+                max_w, max_h = excel_cell_size_to_pixels(ws, row, IMG_COL)
+    
+                ws.cell(row=row, column=NO_COL, value=idx + 1)
+                ws.cell(row=row, column=PRODUCT_COL, value=p["name"])
+                ws.cell(row=row, column=MODEL_COL, value=p["model"])
+                ws.cell(row=row, column=QUANTITY_COL, value=p["Q"])
+
+                B_CNY, A_CNY, B_USD, A_USD = calculate_prices(p["P"], p["Q"], total_Q, F, R)
+                if B_CNY:
+                    write_cell_safe(ws, row, RMB_COL_START, B_CNY)
+                    write_cell_safe(ws, row, RMB_COL_START + 1, A_CNY)
+                    write_cell_safe(ws, row, USD_COL_START, B_USD)
+                    write_cell_safe(ws, row, USD_COL_START + 1, A_USD)
+    
+                # 插入图片
+                if p["img"]:
+                    insert_image(ws, p["img"], f"C{row}", max_width=max_w, max_height=max_h)
+                
+            # 保存新文件到 BytesIO 提供下载
+            output = BytesIO()
+            wb.save(output)
+            output.seek(0)
+            new_file_name = f"报价单_{date_input.replace('/', '-')}.xlsx"
+    
+            st.download_button(
+                "下载报价单",
+                data=output,
+                file_name=new_file_name,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
