@@ -69,23 +69,76 @@ product_options = {
     "焊料": ["CB-01", "CB-02"],
 }
 
-# 动态添加产品行
-if "product_rows" not in st.session_state:
-    st.session_state.product_rows = 1
-if st.button("添加产品"):
-    st.session_state.product_rows += 1
+# 初始化
+if "products" not in st.session_state:
+    st.session_state.products = [{
+        "name": list(product_options.keys())[0],
+        "model": product_options[list(product_options.keys())[0]][0],
+        "P": None,
+        "Q": None,
+        "img": None
+    }]
 
-products = []
-for i in range(st.session_state.product_rows):
-    st.subheader(f"产品 {i+1}")
-    no = i + 1
-    st.text(f"序号: {no}")
-    name = st.selectbox(f"产品名称", list(product_options.keys()), key=f"name{i}")
-    model = st.selectbox(f"型号", product_options[name], key=f"model{i}")
-    P = st.number_input(f"净单价", value=None, format="%.4f", key=f"P{i}")
-    Q = st.number_input(f"数量", min_value=0, value=None, key=f"Q{i}")
-    uploaded_file = st.file_uploader(f"上传图片", type=["png","jpg","jpeg"], key=f"img{i}")
-    products.append({"no": no, "name": name, "model": model, "P": P, "Q": Q, "img": uploaded_file})
+if "product_images" not in st.session_state:
+    st.session_state.product_images = [None] * len(st.session_state.products)
+
+products = st.session_state.products
+
+for i, p in enumerate(st.session_state.products):
+    st.markdown("---")
+    col_title, col_btns = st.columns([6, 4])
+    with col_title:
+        st.subheader(f"产品 {i+1}")
+        
+    with col_btn:
+        btn_cols = st.columns(3)
+        with btn_cols[0]:
+            if st.button("上移", key=f"up{i}", disabled=(i == 0)):
+                products[i - 1], products[i] = products[i], products[i - 1]
+                st.session_state.product_images[i - 1], st.session_state.product_images[i] = \
+                    st.session_state.product_images[i], st.session_state.product_images[i - 1]
+                st.rerun()
+        with btn_cols[1]:
+            if st.button("下移", key=f"down{i}", disabled=(i == len(products) - 1)):
+                products[i + 1], products[i] = products[i], products[i + 1]
+                st.session_state.product_images[i + 1], st.session_state.product_images[i] = \
+                    st.session_state.product_images[i], st.session_state.product_images[i + 1]
+                st.rerun()
+        with btn_cols[2]:
+            if st.button("删除", key=f"del{i}"):
+                del st.session_state.products[i]
+                del st.session_state.product_images[i]
+                st.rerun()
+                
+    # 产品信息
+    name = st.selectbox(f"产品名称", list(product_options.keys()), 
+                        index=list(product_options.keys()).index(p["name"]), 
+                        key=f"name{i}")
+    model = st.selectbox(f"型号", product_options[name],
+                         index=product_options[name].index(p["model"]) if p["model"] in product_options[name] else 0,
+                         key=f"model{i}")
+    P = st.number_input(f"净单价", value=p["P"], format="%.4f", key=f"P{i}")
+    Q = st.number_input(f"数量", min_value=0, value=p["Q"], step=1, key=f"Q{i}")
+    uploaded_file = st.file_uploader(f"上传图片", type=["png", "jpg", "jpeg"], key=f"img{i}")
+
+    if uploaded_file is not None:
+        st.session_state.product_images[i] = uploaded_file
+    img_file = st.session_state.product_images[i]
+
+    # 保存更新
+    p.update({"name": name, "model": model, "P": P, "Q": Q, "img": img_file})
+
+    # 添加产品按钮
+    if st.button(f"添加产品", key=f"add_after_{i}"):
+        st.session_state.products.insert(i + 1, {
+            "name": list(product_options.keys())[0],
+            "model": product_options[list(product_options.keys())[0]][0],
+            "P": None,
+            "Q": None,
+            "img": None
+        })
+        st.session_state.product_images.insert(i + 1, None)
+        st.rerun()
 
 
 # ---------------- 预览 ----------------
@@ -120,6 +173,10 @@ if st.button("预览报价单"):
 
 # 生成报价单
 if st.button("生成报价单"):
+    if not uploaded_template:
+        st.error("请先上传 Excel 模板")
+        st.stop()
+        
     try:
         F = eval(F_input)
         R = float(R_input)
@@ -137,35 +194,31 @@ if st.button("生成报价单"):
     ws.cell(row=9, column=7, value=date_input)
 
     # 列位置
-    NO_COL = 1
-    PRODUCT_COL = 2
-    IMG_COL = 3
-    MODEL_COL = 4
-    QUANTITY_COL = 5
-    RMB_COL_START = 7
-    USD_COL_START = 9
+    NO_COL, PRODUCT_COL, IMG_COL, MODEL_COL, QUANTITY_COL = 1, 2, 3, 4, 5
+    RMB_COL_START, USD_COL_START = 7, 9
 
     # 写入产品数据
-    for idx, p in enumerate(products):
+    for p in products:
         row = start_row + idx
         ws.row_dimensions[row].height = 69
         max_w, max_h = excel_cell_size_to_pixels(ws, row, IMG_COL)
 
-        ws.cell(row=row, column=NO_COL, value=p["no"])
+        ws.cell(row=row, column=NO_COL, value=idx + 1)
         ws.cell(row=row, column=PRODUCT_COL, value=p["name"])
         ws.cell(row=row, column=MODEL_COL, value=p["model"])
         ws.cell(row=row, column=QUANTITY_COL, value=p["Q"])
 
         B_CNY, A_CNY, B_USD, A_USD = calculate_prices(p["P"], p["Q"], total_Q, F, R)
-        write_cell_safe(ws, row, RMB_COL_START, B_CNY)
-        write_cell_safe(ws, row, RMB_COL_START + 1, A_CNY)
-        write_cell_safe(ws, row, USD_COL_START, B_USD)
-        write_cell_safe(ws, row, USD_COL_START + 1, A_USD)
+        if B_CNY:
+            write_cell_safe(ws, row, RMB_COL_START, B_CNY)
+            write_cell_safe(ws, row, RMB_COL_START + 1, A_CNY)
+            write_cell_safe(ws, row, USD_COL_START, B_USD)
+            write_cell_safe(ws, row, USD_COL_START + 1, A_USD)
 
         # 插入图片
-        if p["img"] is not None:
+        if p["img"]:
             insert_image(ws, p["img"], f"C{row}", max_width=max_w, max_height=max_h)
-
+            
     # 保存新文件到 BytesIO 提供下载
     output = BytesIO()
     wb.save(output)
@@ -173,7 +226,7 @@ if st.button("生成报价单"):
     new_file_name = f"报价单_{date_input.replace('/', '-')}.xlsx"
 
     st.download_button(
-        "下载生成的报价单",
+        "下载报价单",
         data=output,
         file_name=new_file_name,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
