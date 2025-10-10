@@ -8,6 +8,7 @@ from PIL import Image
 from io import BytesIO
 import datetime
 import pandas as pd
+import uuid
 
 
 # ---------------- 函数 ----------------
@@ -72,6 +73,7 @@ product_options = {
 # 初始化
 if "products" not in st.session_state:
     st.session_state.products = [{
+        "uid": str(uuid.uuid4()),
         "name": list(product_options.keys())[0],
         "model": product_options[list(product_options.keys())[0]][0],
         "P": None,
@@ -114,10 +116,10 @@ for i, p in enumerate(st.session_state.products):
     # 产品信息
     name = st.selectbox(f"产品名称", list(product_options.keys()), 
                         index=list(product_options.keys()).index(p["name"]), 
-                        key=f"name{i}")
+                        key=f"name_{p['uid']}")
     model = st.selectbox(f"型号", product_options[name],
                          index=product_options[name].index(p["model"]) if p["model"] in product_options[name] else 0,
-                         key=f"model{i}")
+                         key=f"model_{p['uid']}")
     P = st.number_input(f"净单价", value=p["P"], format="%.4f", key=f"P{i}")
     Q = st.number_input(f"数量", min_value=0, value=p["Q"], step=1, key=f"Q{i}")
     uploaded_file = st.file_uploader(f"上传图片", type=["png", "jpg", "jpeg"], key=f"img{i}")
