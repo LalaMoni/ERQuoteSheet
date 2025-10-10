@@ -72,49 +72,37 @@ product_options = {
 
 # 初始化
 if "products" not in st.session_state:
-    st.session_state.products = []
-
-for p in st.session_state.products:
-    if "uid" not in p:
-        p["uid"] = str(uuid.uuid4())
-
-# 添加新产品
-new_product = {
-    "uid": str(uuid.uuid4()),
-    "name": list(product_options.keys())[0],
-    "model": product_options[list(product_options.keys())[0]][0],
-    "P": None,
-    "Q": None,
-    "img": None
-}
-st.session_state.products.append(new_product)
-
+    st.session_state.products = [{
+        "uid": str(uuid.uuid4()),
+        "name": list(product_options.keys())[0],
+        "model": product_options[list(product_options.keys())[0]][0],
+        "P": None,
+        "Q": None,
+        "img": None
+    }]
+    
 if "product_images" not in st.session_state:
-    st.session_state.product_images = [None] * len(st.session_state.products)
+    st.session_state.product_images = [p["img"] for p in st.session_state.products]
 
 products = st.session_state.products
 
 for i, p in enumerate(st.session_state.products):
     st.markdown("---")
-    
     col_title, col_up, col_down, col_del = st.columns([6, 1, 1, 1])
     with col_title:
-        st.subheader(f"产品 {i+1}")
-        
+        st.subheader(f"产品 {i+1}")  
     with col_up:
         if st.button("上移", key=f"up{i}", disabled=(i == 0)):
             products[i - 1], products[i] = products[i], products[i - 1]
             st.session_state.product_images[i - 1], st.session_state.product_images[i] = \
                 st.session_state.product_images[i], st.session_state.product_images[i - 1]
             st.rerun()
-
     with col_down:
         if st.button("下移", key=f"down{i}", disabled=(i == len(products) - 1)):
             products[i + 1], products[i] = products[i], products[i + 1]
             st.session_state.product_images[i + 1], st.session_state.product_images[i] = \
                 st.session_state.product_images[i], st.session_state.product_images[i + 1]
             st.rerun()
-
     with col_del:
         if st.button("删除", key=f"del{i}"):
             del st.session_state.products[i]
@@ -122,33 +110,32 @@ for i, p in enumerate(st.session_state.products):
             st.rerun()
                 
     # 产品信息
-    name = st.selectbox(f"产品名称", list(product_options.keys()), 
-                        index=list(product_options.keys()).index(p["name"]), 
+    name = st.selectbox("产品名称", list(product_options.keys()),
+                        index=list(product_options.keys()).index(p["name"]),
                         key=f"name_{p['uid']}")
-    model = st.selectbox(f"型号", product_options[name],
+    model = st.selectbox("型号", product_options[name],
                          index=product_options[name].index(p["model"]) if p["model"] in product_options[name] else 0,
                          key=f"model_{p['uid']}")
-    P = st.number_input(f"净单价", value=p["P"], format="%.4f", key=f"P{i}")
-    Q = st.number_input(f"数量", min_value=0, value=p["Q"], step=1, key=f"Q{i}")
-    uploaded_file = st.file_uploader(f"上传图片", type=["png", "jpg", "jpeg"], key=f"img{i}")
+    P = st.number_input("净单价", value=p["P"], format="%.4f", key=f"P_{p['uid']}")
+    Q = st.number_input("数量", value=p["Q"] if p["Q"] is not None else 0, min_value=0, step=1, key=f"Q_{p['uid']}")
+    uploaded_file = st.file_uploader("上传图片", type=["png","jpg","jpeg"], key=f"img_{p['uid']}")
 
     if uploaded_file is not None:
         st.session_state.product_images[i] = uploaded_file
-    img_file = st.session_state.product_images[i]
-
-    # 保存更新
-    p.update({"name": name, "model": model, "P": P, "Q": Q, "img": img_file})
+    p.update({"name": name, "model": model, "P": P, "Q": Q, "img": st.session_state.product_images[i]})
 
     # 添加产品按钮
     if st.button(f"添加产品", key=f"add_after_{i}"):
-        st.session_state.products.insert(i + 1, {
+        new_product = {
+            "uid": str(uuid.uuid4()),
             "name": list(product_options.keys())[0],
             "model": product_options[list(product_options.keys())[0]][0],
             "P": None,
             "Q": None,
             "img": None
-        })
-        st.session_state.product_images.insert(i + 1, None)
+        }
+        products.insert(i+1, new_product)
+        st.session_state.product_images.insert(i+1, None)
         st.rerun()
 
 
