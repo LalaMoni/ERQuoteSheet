@@ -86,7 +86,8 @@ products = st.session_state.products
 
 for i, p in enumerate(st.session_state.products):
     st.markdown("---")
-    col_title, col_btns = st.columns([6, 4])
+    
+    col_title, col_up, col_down, col_del = st.columns([6, 1, 1, 1])
     with col_title:
         st.subheader(f"产品 {i+1}")
         
