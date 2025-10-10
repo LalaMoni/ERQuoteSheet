@@ -90,25 +90,26 @@ for i, p in enumerate(st.session_state.products):
     with col_title:
         st.subheader(f"产品 {i+1}")
         
-    with col_btn:
-        btn_cols = st.columns(3)
-        with btn_cols[0]:
-            if st.button("上移", key=f"up{i}", disabled=(i == 0)):
-                products[i - 1], products[i] = products[i], products[i - 1]
-                st.session_state.product_images[i - 1], st.session_state.product_images[i] = \
-                    st.session_state.product_images[i], st.session_state.product_images[i - 1]
-                st.rerun()
-        with btn_cols[1]:
-            if st.button("下移", key=f"down{i}", disabled=(i == len(products) - 1)):
-                products[i + 1], products[i] = products[i], products[i + 1]
-                st.session_state.product_images[i + 1], st.session_state.product_images[i] = \
-                    st.session_state.product_images[i], st.session_state.product_images[i + 1]
-                st.rerun()
-        with btn_cols[2]:
-            if st.button("删除", key=f"del{i}"):
-                del st.session_state.products[i]
-                del st.session_state.product_images[i]
-                st.rerun()
+    btn_cols = col_btns_container.columns(3)
+    with btn_cols[0]:
+        if st.button("上移", key=f"up{i}", disabled=(i == 0)):
+            products[i - 1], products[i] = products[i], products[i - 1]
+            st.session_state.product_images[i - 1], st.session_state.product_images[i] = \
+                st.session_state.product_images[i], st.session_state.product_images[i - 1]
+            st.rerun()
+
+    with btn_cols[1]:
+        if st.button("下移", key=f"down{i}", disabled=(i == len(products) - 1)):
+            products[i + 1], products[i] = products[i], products[i + 1]
+            st.session_state.product_images[i + 1], st.session_state.product_images[i] = \
+                st.session_state.product_images[i], st.session_state.product_images[i + 1]
+            st.rerun()
+
+    with btn_cols[2]:
+        if st.button("删除", key=f"del{i}"):
+            del st.session_state.products[i]
+            del st.session_state.product_images[i]
+            st.rerun()
                 
     # 产品信息
     name = st.selectbox(f"产品名称", list(product_options.keys()), 
